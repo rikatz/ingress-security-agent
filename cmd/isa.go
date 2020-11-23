@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
+	isa "github.com/rikatz/ingress-security-agent/pkg"
 	"github.com/rikatz/ingress-security-agent/pkg/agents/modsecurity"
+	spoa "github.com/rikatz/ingress-security-agent/pkg/handlers/spoa"
 
 	log "github.com/sirupsen/logrus"
 
@@ -22,6 +24,9 @@ var (
 
 	// Ratelimit configs
 	ratelimitagent bool
+
+	// HAProxy / SPOE Handler
+	spoehandler bool
 
 	// Logconfigs
 	logformat string
@@ -49,12 +54,7 @@ func getVersion() string {
 }
 
 func runSA(cmd *cobra.Command, args []string) error {
-	/*config := isa.Config{
-		ModSecRulesFile: rulesfile,
-		ModSecAgent:     modsecagent,
-		RateLimitAgent:  ratelimitagent,
-		NumberOfThreads: nbthreads,
-	}*/
+	var config isa.Config
 
 	lvl, err := log.ParseLevel(loglevel)
 	if err != nil {
@@ -71,6 +71,7 @@ func runSA(cmd *cobra.Command, args []string) error {
 	}
 
 	if modsecagent {
+		config.ModSecAgent = true
 		if rulesfile == "" {
 			return fmt.Errorf("ModSecurity Rules is required when using ModSecurity Agent")
 		}
@@ -78,11 +79,22 @@ func runSA(cmd *cobra.Command, args []string) error {
 		if os.IsNotExist(err) || info.IsDir() {
 			return fmt.Errorf("rules file not found or created as a directory: %s", rulesfile)
 		}
+
+		config.ModSecStruct, err = modsecurity.InitModSecurity(rulesfile)
+		if err != nil {
+			return fmt.Errorf("Failed to initialize Modsecurity: %s", err.Error())
+		}
 	}
 
-	_, err = modsecurity.InitModSecurity(rulesfile)
-	if err != nil {
-		return fmt.Errorf("%v", err)
+	if ratelimitagent {
+		config.RateLimitAgent = true
+		return fmt.Errorf("Ratelimit agent not yet implemented")
+	}
+
+	if spoehandler {
+		if err := spoa.NewListener(config); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return nil
@@ -91,6 +103,7 @@ func runSA(cmd *cobra.Command, args []string) error {
 func init() {
 	// TODO: Ordenate, break in sections
 
+	rootCmd.PersistentFlags().BoolVar(&spoehandler, "spoe", true, "Start the SPOE Handler (HAProxy)")
 	rootCmd.PersistentFlags().BoolVar(&modsecagent, "modsec", true, "Start the ModSecurity Agent")
 	rootCmd.PersistentFlags().StringVar(&rulesfile, "modsec-rules", "", "Location of the rules file for ModSecurity Agent")
 	rootCmd.PersistentFlags().BoolVar(&ratelimitagent, "ratelimit", false, "Start the Rate Limit Agent")

@@ -1,27 +1,14 @@
 package isa
 
+import (
+	modsec "github.com/rikatz/ingress-security-agent/pkg/agents/modsecurity"
+)
+
+// Config defines the Configuration of the agent necessary for all
+// the handlers
 type Config struct {
-	ModSecRulesFile string
 	ModSecAgent     bool
+	ModSecStruct    *modsec.ModsecAgent
 	RateLimitAgent  bool
 	NumberOfThreads int
-}
-
-// Request represents an HTTP Request to be parsed
-type Request struct {
-	Method     string
-	Path       string
-	Query      string
-	Version    string
-	ClientIP   string
-	ServerIP   string
-	ServerPort int
-	Headers    []Header
-	Body       []byte
-}
-
-// Header represent a struct with the Name and Value of a Header
-type Header struct {
-	Name  string
-	Value string
 }

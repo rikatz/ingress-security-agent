@@ -18,7 +18,7 @@ type ModsecAgent struct {
 func InitModSecurity(rules string) (*ModsecAgent, error) {
 	modsecurity, err := modsec.NewModsecurity()
 	if err != nil {
-		return &ModsecAgent{}, fmt.Errorf("unable to load Modsecurity: %v", err)
+		return &ModsecAgent{}, fmt.Errorf("unable to load Modsecurity: %s", err.Error())
 	}
 
 	modsecurity.SetServerLogCallback(func(msg string) {
@@ -30,23 +30,14 @@ func InitModSecurity(rules string) (*ModsecAgent, error) {
 	}
 
 	log.Infof("Modsecurity thread initialized: %s", modsecurity.WhoAmI())
-	err = agent.loadRules(rules)
+
+	agent.rules = agent.modsecurity.NewRuleSet()
+	err = agent.rules.AddFile(rules)
+
 	if err != nil {
-		return &ModsecAgent{}, fmt.Errorf("unable to load Modsecurity: %v", err)
+		return &ModsecAgent{}, fmt.Errorf("failed to load rules files: %s", err.Error())
 	}
 
 	return agent, nil
 
-}
-
-func (m *ModsecAgent) loadRules(rules string) error {
-
-	ruleset := m.modsecurity.NewRuleSet()
-	err := ruleset.AddFile(rules)
-	if err != nil {
-		return fmt.Errorf("Could not load file '%s': %s", rules, err.Error())
-	}
-
-	m.rules = ruleset
-	return nil
 }
