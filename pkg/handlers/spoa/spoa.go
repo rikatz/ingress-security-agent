@@ -42,12 +42,10 @@ func MessageHandler(msgs *spoe.MessageIterator) (actions []spoe.Action, err erro
 		if err != nil {
 			return nil, fmt.Errorf("Failed to populate the request: %v", err)
 		}
-		// TODO: Replace the TRUE below to the config.modsecurity=enabled
 		if msg.Name == "modsecurity" && config.ModSecAgent {
 			agent = agents.NewModSecurityAgent(config.ModSecStruct)
 			spoeresponse.Name = "modsecurity"
 		}
-		// TODO: Replace the False below to the config.modsecurity=enabled
 		if msg.Name == "rate-limit" && config.RateLimitAgent {
 			//agent = agent.NewRateLimitAgent()
 			spoeresponse.Name = "rate-limit"
@@ -56,7 +54,6 @@ func MessageHandler(msgs *spoe.MessageIterator) (actions []spoe.Action, err erro
 			return nil, fmt.Errorf("spoe handler: Message could not be parsed, no such agent: %s", msg.Name)
 		}
 
-		fmt.Printf("%#v", request)
 		intervene, err := agent.GetIntervention(request)
 		if err != nil {
 			return nil, fmt.Errorf("Could not parse the message: %s", err.Error())

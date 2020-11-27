@@ -9,3 +9,5 @@ require (
 	github.com/spf13/cobra v1.1.1 // indirect
 	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
 )
+
+replace github.com/rikatz/go-modsecurity => /home/rkatz/git/go-modsecurity

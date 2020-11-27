@@ -2,6 +2,7 @@ package modsecurity
 
 import (
 	"fmt"
+	"time"
 
 	modsec "github.com/rikatz/go-modsecurity"
 	"github.com/rikatz/ingress-security-agent/apis"
@@ -9,12 +10,22 @@ import (
 
 //ModsecTransaction parses a request and return if it needs intervention
 func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention bool, err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+		fmt.Printf("Elapsed time: %s\n", elapsed)
+	}()
+
 	var path, ignoreRules string
 
-	// TODO: This is not working. Once it add a new SecRule, it wont remove
-	// Verify in library code how can (and if we can) change this
-	var curRules modsec.RuleSet
-	curRules = *agent.rules
+	// I know this might be slower, but it was the safer way
+	// I found to do without getting hit by segfaults from CGO
+	var curRules *modsec.RuleSet
+	curRules = agent.modsecurity.NewRuleSet()
+	err = agent.rules.Merge(curRules)
+	if err != nil {
+		return false, fmt.Errorf("Modsecurity: Failed to clone additional rules: %v", err)
+	}
 
 	if request.IgnoreRules != "" {
 		ignoreRules = fmt.Sprint("SecRuleRemoveById " + request.IgnoreRules)
@@ -29,7 +40,6 @@ func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention 
 
 	transaction, err := curRules.NewTransaction(clientIP, srvIP)
 
-	fmt.Printf("%s    %s\n\n\n", clientIP, srvIP)
 	if err != nil {
 		return false, fmt.Errorf("Modsecurity: Failed to process the connection: %v", err)
 	}

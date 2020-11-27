@@ -22,7 +22,7 @@ func InitModSecurity(rules string) (*ModsecAgent, error) {
 	}
 
 	modsecurity.SetServerLogCallback(func(msg string) {
-		log.Infof(msg)
+		log.Println(msg)
 	})
 
 	agent := &ModsecAgent{
