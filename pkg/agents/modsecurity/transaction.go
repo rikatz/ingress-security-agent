@@ -54,6 +54,17 @@ func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention 
 		}
 	}
 
+	// Kubernetes specific. Add the directives into headers to be logged :)
+	if request.IngressName != "" && request.Namespace != "" {
+		if transaction.AddRequestHeader([]byte("x-kubernetes-namespace"), []byte(request.Namespace)) != nil {
+			return false, fmt.Errorf("Modsecurity: Failed to Kubernetes Namespace Headers: %s", err.Error())
+		}
+
+		if transaction.AddRequestHeader([]byte("x-kubernetes-ingressname"), []byte(request.IngressName)) != nil {
+			return false, fmt.Errorf("Modsecurity: Failed to Kubernetes Ingress Name Headers: %s", err.Error())
+		}
+	}
+
 	if transaction.ProcessRequestHeaders() != nil {
 		return false, fmt.Errorf("Modsecurity: Failed to process the Headers: %s", err.Error())
 	}

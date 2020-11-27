@@ -25,6 +25,7 @@ func GetDecision(request isa.Request) (intervention bool, err error) {
 
 	return false, nil
 }*/
+const expectedSPOEArguments = 8
 
 var config isa.Config
 
@@ -69,9 +70,9 @@ func MessageHandler(msgs *spoe.MessageIterator) (actions []spoe.Action, err erro
 }
 
 // TODO: Turn this into an interface, as the request is the same for any
-// TODO2: validate if all fields are here (ValidateRequest)
 // agent and each handler can deal with this differently :)
 func PopulateRequest(msg spoe.Message) (request *apis.Request, err error) {
+	var countRequired int
 	request = &apis.Request{}
 
 	for msg.Args.Next() {
@@ -80,18 +81,27 @@ func PopulateRequest(msg spoe.Message) (request *apis.Request, err error) {
 			switch arg.Name {
 			case "method":
 				request.Method = value
+				countRequired++
 				continue
 			case "path":
 				request.Path = value
+				countRequired++
 				continue
 			case "query":
 				request.Query = value
 				continue
 			case "reqver":
 				request.Version = value
+				countRequired++
 				continue
 			case "ignorerules":
 				request.IgnoreRules = value
+				continue
+			case "namespace":
+				request.Namespace = value
+				continue
+			case "ingressname":
+				request.IngressName = value
 				continue
 			}
 		}
@@ -100,14 +110,17 @@ func PopulateRequest(msg spoe.Message) (request *apis.Request, err error) {
 			switch arg.Name {
 			case "srvip":
 				request.ServerIP = value.String()
+				countRequired++
 				continue
 			case "clientip":
 				request.ClientIP = value.String()
+				countRequired++
 				continue
 			}
 		}
 
 		if value, ok := arg.Value.(int); ok && arg.Name == "srvport" {
+			countRequired++
 			request.ServerPort = value
 		}
 
@@ -117,10 +130,17 @@ func PopulateRequest(msg spoe.Message) (request *apis.Request, err error) {
 				if request.Headers, err = spoe.DecodeHeaders(value); err != nil {
 					return &apis.Request{}, fmt.Errorf("Failure decoding the headers")
 				}
+				countRequired++
+				continue
 			case "reqbody":
 				request.Body = value
+				countRequired++
+				continue
 			}
 		}
+	}
+	if countRequired != expectedSPOEArguments {
+		return nil, fmt.Errorf("spoe error: number of expected arguments (%d) is different from the passed arguments: %d", expectedSPOEArguments, countRequired)
 	}
 	return request, nil
 }

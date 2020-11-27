@@ -14,4 +14,8 @@ type Request struct {
 	ServerPort  int
 	Headers     http.Header
 	Body        []byte
+	// Kubernetes Ingress specific
+	// The fields will be added to 
+	Namespace string
+	IngressName string
 }
