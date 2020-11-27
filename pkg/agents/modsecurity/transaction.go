@@ -16,7 +16,8 @@ func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention 
 		fmt.Printf("Elapsed time: %s\n", elapsed)
 	}()
 
-	var path, ignoreRules string
+	//var path, ignoreRules string
+	var path string
 
 	// I know this might be slower, but it was the safer way
 	// I found to do without getting hit by segfaults from CGO
@@ -27,13 +28,16 @@ func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention 
 		return false, fmt.Errorf("Modsecurity: Failed to clone additional rules: %v", err)
 	}
 
+	/* TODO: This seems to be with a memory leak.
+	// When using the ignore Rules, sometimes modsecurity simply stops.
+	// Is this maybe something related to ModSecurity specific engine?
 	if request.IgnoreRules != "" {
 		ignoreRules = fmt.Sprint("SecRuleRemoveById " + request.IgnoreRules)
 		err := curRules.AddRules(ignoreRules)
 		if err != nil {
 			return false, fmt.Errorf("Modsecurity: Failed to parse the additional rules: %v", err)
 		}
-	}
+	}*/
 
 	clientIP := fmt.Sprintf("%s:12345", request.ClientIP)
 	srvIP := fmt.Sprintf("%s:%d", request.ServerIP, request.ServerPort)
