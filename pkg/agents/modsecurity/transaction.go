@@ -2,18 +2,14 @@ package modsecurity
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/rikatz/ingress-security-agent/apis"
+
+	"unicode/utf8"
 )
 
 //ModsecTransaction parses a request and return if it needs intervention
 func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention bool, err error) {
-	start := time.Now()
-	defer func() {
-		elapsed := time.Since(start)
-		fmt.Printf("Elapsed time: %s\n", elapsed)
-	}()
 
 	var path string
 
@@ -43,6 +39,7 @@ func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention 
 		return false, fmt.Errorf("Modsecurity: Failed to process the URI: %s", err.Error())
 	}
 	if transaction.ShouldIntervene() {
+		registerMetrics(request, transaction.BlockedBy)
 		return true, nil
 	}
 
@@ -70,6 +67,7 @@ func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention 
 	}
 
 	if transaction.ShouldIntervene() {
+		registerMetrics(request, transaction.BlockedBy)
 		return true, nil
 	}
 
@@ -82,8 +80,18 @@ func ModsecTransaction(request *apis.Request, agent *ModsecAgent) (intervention 
 	}
 
 	if transaction.ShouldIntervene() {
+		registerMetrics(request, transaction.BlockedBy)
 		return true, nil
 	}
 
 	return false, nil
+}
+
+func registerMetrics(request *apis.Request, blockedBy []string) {
+	for _, rule := range blockedBy {
+		blockCountRule.WithLabelValues(rule).Inc()
+	}
+	if utf8.ValidString(request.Namespace) && utf8.ValidString(request.IngressName) {
+		blockCountURL.WithLabelValues(request.Namespace, request.IngressName).Inc()
+	}
 }

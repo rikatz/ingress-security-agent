@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	isa "github.com/rikatz/ingress-security-agent/pkg"
 	"github.com/rikatz/ingress-security-agent/pkg/agents/modsecurity"
 	spoa "github.com/rikatz/ingress-security-agent/pkg/handlers/spoa"
@@ -35,6 +37,10 @@ var (
 	// TODO: Are we going to use threads inside here
 	nbthreads int
 
+	// Prometheus
+	metricsPath    string
+	metricsAddress string
+
 	rootCmd = &cobra.Command{
 		Use:          filepath.Base(os.Args[0]),
 		SilenceUsage: true,
@@ -55,6 +61,11 @@ func getVersion() string {
 
 func runSA(cmd *cobra.Command, args []string) error {
 	var config isa.Config
+
+	go func() {
+		http.Handle(metricsPath, promhttp.Handler())
+		http.ListenAndServe(metricsAddress, nil)
+	}()
 
 	lvl, err := log.ParseLevel(loglevel)
 	if err != nil {
@@ -112,6 +123,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&loglevel, "log-level", "v", log.WarnLevel.String(), "Log level: debug, info, warn, error, fatal, panic")
 	rootCmd.PersistentFlags().IntVarP(&nbthreads, "nbthreads", "n", 5, "Number of threads to start")
 
+	// Prometheus
+	rootCmd.PersistentFlags().StringVar(&metricsPath, "metrics-path", "/metrics", "Path for the metrics endpoint")
+	rootCmd.PersistentFlags().StringVar(&metricsAddress, "metrics-address", ":2112", "Bind address for the metrics endpoint")
 }
 
 func main() {

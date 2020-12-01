@@ -3,11 +3,14 @@ package spoa
 import (
 	"fmt"
 	"net"
+	"time"
 
 	spoe "github.com/criteo/haproxy-spoe-go"
 	apis "github.com/rikatz/ingress-security-agent/apis"
 	isa "github.com/rikatz/ingress-security-agent/pkg"
 	agents "github.com/rikatz/ingress-security-agent/pkg/agents"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 /*
@@ -27,7 +30,15 @@ func GetDecision(request isa.Request) (intervention bool, err error) {
 }*/
 const expectedSPOEArguments = 8
 
-var config isa.Config
+var (
+	config isa.Config
+
+	spoaTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "spoa",
+		Name:      "handler_message_processing_time",
+		Buckets:   []float64{.1, 1, 5, 10, 50, 100, 500},
+	}, []string{"name", "module"})
+)
 
 func MessageHandler(msgs *spoe.MessageIterator) (actions []spoe.Action, err error) {
 
@@ -36,6 +47,12 @@ func MessageHandler(msgs *spoe.MessageIterator) (actions []spoe.Action, err erro
 	spoeresponse.Scope = spoe.VarScopeSession
 	spoeresponse.Name = ""
 	spoeresponse.Value = false
+
+	StartedAt := time.Now()
+	defer func() {
+		Duration := time.Since(StartedAt)
+		spoaTime.WithLabelValues("spoa", spoeresponse.Name).Observe(float64(Duration.Milliseconds()))
+	}()
 
 	for msgs.Next() {
 		msg := msgs.Message
@@ -64,6 +81,7 @@ func MessageHandler(msgs *spoe.MessageIterator) (actions []spoe.Action, err erro
 			spoeresponse.Value = true
 		}
 	}
+
 	return []spoe.Action{
 		spoeresponse,
 	}, nil
@@ -148,6 +166,7 @@ func PopulateRequest(msg spoe.Message) (request *apis.Request, err error) {
 // NewListener starts a new SPOAListener to serve HAProxy requests
 func NewListener(IsaConfig isa.Config) error {
 	config = IsaConfig
+	prometheus.MustRegister(spoaTime)
 	listener := spoe.New(MessageHandler)
 	err := listener.ListenAndServe(":9000")
 	if err != nil {

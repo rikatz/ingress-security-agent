@@ -3,6 +3,7 @@ package modsecurity
 import (
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 
 	modsec "github.com/rikatz/go-modsecurity"
@@ -13,6 +14,16 @@ type ModsecAgent struct {
 	modsecurity *modsec.Modsecurity
 	rules       *modsec.RuleSet
 }
+
+var (
+	blockCountRule = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "agent_modsecurity_blocked_rules",
+	}, []string{"ruleid"})
+
+	blockCountURL = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "agent_modsecurity_blocked_urls",
+	}, []string{"namespace", "ingressname"})
+)
 
 // InitModSecurity initializes the ModSecurity to be used by the worker
 func InitModSecurity(rules string) (*ModsecAgent, error) {
@@ -37,6 +48,7 @@ func InitModSecurity(rules string) (*ModsecAgent, error) {
 	if err != nil {
 		return &ModsecAgent{}, fmt.Errorf("failed to load rules files: %s", err.Error())
 	}
+	prometheus.MustRegister(blockCountRule, blockCountURL)
 
 	return agent, nil
 
