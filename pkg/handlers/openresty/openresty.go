@@ -71,7 +71,6 @@ func newRouter() *mux.Router {
 	return r
 }
 
-// TODO: Implement the decode and populate request
 func httpModSecurity(w http.ResponseWriter, r *http.Request) {
 
 	StartedAt := time.Now()
@@ -127,10 +126,8 @@ func PopulateRequest(r *http.Request) (request *apis.Request, err error) {
 
 	if rDecode.Method == "" || rDecode.Path == "" ||
 		rDecode.Version == "" || rDecode.ClientIP == "" ||
-		rDecode.ServerIP == "" || rDecode.ServerPort == "" ||
-		rDecode.Body == "" { // TODO: rDecode.Headers
+		rDecode.ServerIP == "" || rDecode.ServerPort == "" {
 		return nil, fmt.Errorf("Payload does not contain the required fields")
-
 	}
 
 	srvport, err := strconv.Atoi(rDecode.ServerPort)
