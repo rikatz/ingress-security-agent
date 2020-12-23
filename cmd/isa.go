@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	isa "github.com/rikatz/ingress-security-agent/pkg"
 	"github.com/rikatz/ingress-security-agent/pkg/agents/modsecurity"
+	openresty "github.com/rikatz/ingress-security-agent/pkg/handlers/openresty"
 	spoa "github.com/rikatz/ingress-security-agent/pkg/handlers/spoa"
 
 	log "github.com/sirupsen/logrus"
@@ -27,8 +28,9 @@ var (
 	// Ratelimit configs
 	ratelimitagent bool
 
-	// HAProxy / SPOE Handler
-	spoehandler bool
+	// Handlers
+	spoehandler      bool
+	openrestyhandler bool
 
 	// Logconfigs
 	logformat string
@@ -99,11 +101,17 @@ func runSA(cmd *cobra.Command, args []string) error {
 
 	if ratelimitagent {
 		config.RateLimitAgent = true
-		return fmt.Errorf("Ratelimit agent not yet implemented")
+		log.Warnf("Ratelimit agent is not implemented yet")
 	}
 
 	if spoehandler {
 		if err := spoa.NewListener(config); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if openrestyhandler {
+		if err := openresty.NewListener(config); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -115,6 +123,7 @@ func init() {
 	// TODO: Ordenate, break in sections
 
 	rootCmd.PersistentFlags().BoolVar(&spoehandler, "spoe", true, "Start the SPOE Handler (HAProxy)")
+	rootCmd.PersistentFlags().BoolVar(&openrestyhandler, "openresty", true, "Start the OpenResty Handler (NGINX)")
 	rootCmd.PersistentFlags().BoolVar(&modsecagent, "modsec", true, "Start the ModSecurity Agent")
 	rootCmd.PersistentFlags().StringVar(&rulesfile, "modsec-rules", "", "Location of the rules file for ModSecurity Agent")
 	rootCmd.PersistentFlags().BoolVar(&ratelimitagent, "ratelimit", false, "Start the Rate Limit Agent")

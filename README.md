@@ -6,7 +6,7 @@ Please keep in mind this is a PoC and Work in progress
 
 The idea of this project is to start a common security agent for Ingress Controllers:
 
-* HAProxy - Using a SPOE handler - Ready
+* HAProxy - Using a SPOE handler
 * NGINX - Using a Openresty handler
 
 

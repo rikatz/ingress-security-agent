@@ -168,6 +168,7 @@ func NewListener(IsaConfig isa.Config) error {
 	config = IsaConfig
 	prometheus.MustRegister(spoaTime)
 	listener := spoe.New(MessageHandler)
+	// TODO: Turn the port configurable
 	err := listener.ListenAndServe(":9000")
 	if err != nil {
 		return err
