@@ -125,7 +125,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&spoehandler, "spoe", true, "Start the SPOE Handler (HAProxy)")
 	rootCmd.PersistentFlags().BoolVar(&openrestyhandler, "openresty", true, "Start the OpenResty Handler (NGINX)")
 	rootCmd.PersistentFlags().BoolVar(&modsecagent, "modsec", true, "Start the ModSecurity Agent")
-	rootCmd.PersistentFlags().StringVar(&rulesfile, "modsec-rules", "", "Location of the rules file for ModSecurity Agent")
+	rootCmd.PersistentFlags().StringVar(&rulesfile, "modsec-rules", "/etc/rules/modsecurity.conf", "Location of the rules file for ModSecurity Agent")
 	rootCmd.PersistentFlags().BoolVar(&ratelimitagent, "ratelimit", false, "Start the Rate Limit Agent")
 	rootCmd.PersistentFlags().StringVar(&logformat, "log-format", "json", "Format of the log. Can be: [stdout, plain, json]")
 	rootCmd.PersistentFlags().StringVar(&logfile, "log-file", "", "Name of the file to save the log files, if empty it will display to stdout")

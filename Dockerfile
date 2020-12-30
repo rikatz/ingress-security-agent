@@ -32,7 +32,7 @@ RUN chmod +x /tmp/build-modsecurity.sh && /tmp/build-modsecurity.sh
 
 WORKDIR /go/src/app
 COPY . .
-RUN go build -o /isa cmd/isa.go
+RUN go build -o /isa cmd/isa.go && ./hack/genrules.sh
 
 FROM debian:10-slim as runtime-image
 RUN apt-get update \
@@ -50,6 +50,7 @@ RUN apt-get update \
 
 COPY --from=build /usr/lib/libmodsecurity.so /usr/lib/
 COPY --from=build /isa /usr/bin/isa
+COPY --from=build /go/src/app/rules /etc/rules
 
 RUN /sbin/ldconfig
 

@@ -23,8 +23,3 @@ git clone https://github.com/SpiderLabs/ModSecurity --branch v3.0.4 --depth 1 \
  && make install
 
 rm -rf ${WORKDIR}
-
-
-
-
-
