@@ -165,10 +165,11 @@ func PopulateRequest(r *http.Request) (request *apis.Request, err error) {
 func NewListener(IsaConfig isa.Config) error {
 	config = IsaConfig
 	prometheus.MustRegister(openrestyTime)
-	// TODO: This should be configurable
-	err := http.ListenAndServe(":8000", mwHandler(newRouter()))
-	if err != nil {
-		return err
-	}
+	go func() {
+		err := http.ListenAndServe(config.OpenRestyAddress, mwHandler(newRouter()))
+		if err != nil {
+			log.Fatalf("[SPOA] Error starting the agent: %s", err)
+		}
+	}()
 	return nil
 }

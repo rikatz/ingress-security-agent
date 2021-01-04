@@ -2,6 +2,7 @@ package spoa
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"time"
 
@@ -13,16 +14,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-/*
-type SPOAListener struct {
-	address      string
-	port         uint16
+type SPOAConfig struct {
+	Address      string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
 }
 
-
+/*
 // GetDecision handles if a request needs intervention based on an agent
 func GetDecision(request isa.Request) (intervention bool, err error) {
 
@@ -164,14 +163,21 @@ func PopulateRequest(msg spoe.Message) (request *apis.Request, err error) {
 }
 
 // NewListener starts a new SPOAListener to serve HAProxy requests
-func NewListener(IsaConfig isa.Config) error {
+func NewListener(IsaConfig isa.Config, spoaConfig SPOAConfig) error {
 	config = IsaConfig
-	prometheus.MustRegister(spoaTime)
-	listener := spoe.New(MessageHandler)
-	// TODO: Turn the port configurable
-	err := listener.ListenAndServe(":9000")
-	if err != nil {
-		return err
+	agentConfig := spoe.Config{
+		ReadTimeout:  spoaConfig.ReadTimeout,
+		WriteTimeout: spoaConfig.WriteTimeout,
+		IdleTimeout:  spoaConfig.IdleTimeout,
 	}
+
+	prometheus.MustRegister(spoaTime)
+	listener := spoe.NewWithConfig(MessageHandler, agentConfig)
+	go func() {
+		err := listener.ListenAndServe(spoaConfig.Address)
+		if err != nil {
+			log.Fatalf("[SPOA] Error starting the agent: %s", err)
+		}
+	}()
 	return nil
 }
