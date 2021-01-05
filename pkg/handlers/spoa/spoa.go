@@ -30,8 +30,7 @@ func GetDecision(request isa.Request) (intervention bool, err error) {
 const expectedSPOEArguments = 8
 
 var (
-	config isa.Config
-
+	config   isa.Config
 	spoaTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "spoa",
 		Name:      "handler_message_processing_time",
